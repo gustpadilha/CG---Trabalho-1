@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset=utf-8>
+	<title>Objeto</title>
+	<link rel="shortcut icon" type="image/png" href="icone.png"/>
+	<style>
+		body {
+			margin: 0;
+		}
+
+
+	</style>
+</head>
+
+<body>
+	<script src="../three/three.js"></script>
+	<script src="../three/OBJLoader.js"></script>
+	<script src="../three/OrbitControls.js"></script>
+
+	<script>
+		//cria cena
+		var obj_carregado = new THREE.Mesh();
+		var base_carregada = new THREE.Mesh();
+		var scene = new THREE.Scene();
+
+		//cria camera com (FOV, aspect radio, near, far)
+		var camera = new THREE.PerspectiveCamera(100, (window.innerWidth ) / window.innerHeight, 0.1, 3000);
+
+		//Setando posição da câmera
+		camera.position.z = 10;
+		camera.position.y = 10;
+		camera.position.x = 10;
+
+		// Setando iluminação da lua
+		var light = new THREE.PointLight(0xffffcc, 1.0);
+		light.position.set(0, 7, 0);
+		scene.add(light);
+
+		//Setando iluminação estática
+		var static_light = new THREE.DirectionalLight(0xffffcc, 0.4);
+		light.position.set(0, 7, 0);
+		scene.add(static_light);
+
+		//Setando formato do sol
+		var sun_geometry = new THREE.SphereGeometry(1);
+		var sun_material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var sun = new THREE.Mesh( sun_geometry, sun_material );
+		sun.position.set(0,7, 0);
+		scene.add( sun );
+
+		//Setando background
+		scene.background = new THREE.Color("#01020F");
+
+
+		//Carregando os .obj
+
+		var loader = new THREE.OBJLoader();
+		loader.load(
+			'portalturret.obj',
+			function(object) {
+				object.position.x = 10;
+				object.position.y = 0;
+				object.position.z = 0;
+				object.rotation.y = 80;
+				object.rotation.x = 0;
+				object.scale.set(0.12,0.12,0.12);
+				obj_carregado1 = object;
+				scene.add(obj_carregado1);
+			});
+
+			var loader = new THREE.OBJLoader();
+			loader.load(
+				'Portal Gun.obj',
+				function(object) {
+					object.position.x = -10;
+					object.position.y = 0;
+					object.position.z = 0;
+					object.rotation.x = 27;
+					object.rotation.y = 30;
+					object.rotation.z = 35;
+					object.scale.set(5,5,5);
+					obj_carregado2 = object;
+					scene.add(obj_carregado2);
+				});
+
+		// renderer é o que faz o objeto aparecer na tela
+		var renderer = new THREE.WebGLRenderer();
+		// aqui é definido que o renderer tem tamanho da janela do browser
+		renderer.setSize(0.99*window.innerWidth, 0.99*window.innerHeight);
+		renderer.setPixelRatio(window.devicePixelRatio);
+
+		// elemento <canvas>
+		document.body.appendChild(renderer.domElement);
+
+		// Setando rotação da câmera
+		var controls = new THREE.OrbitControls( camera );
+		controls.autoRotate = false;
+		controls.autoRotateSpeed = 4;
+		controls.update();
+
+		// Setando rotação do sol
+		var animate = function() {
+			timestamp = Date.now() * 0.0001;
+			sun.position.x = Math.cos(timestamp * 50) * 15;
+    	sun.position.y = Math.sin(timestamp * 50) * 15;
+    	sun.position.z = Math.sin(timestamp * 50) * 15;
+			light.position.x = sun.position.x;
+			light.position.y = sun.position.y;
+			light.position.z = sun.position.z;
+			requestAnimationFrame(animate);
+			renderer.render(scene, camera);
+			controls.update();
+		};
+		animate();
+
+	</script>
+</body>
+
+</html>
