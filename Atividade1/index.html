@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Trabalho 1 de CG</title>
+		<title>Trab de CG</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -27,15 +27,35 @@
 
 	<body>
     <!--importando os .js importantes-->
+		<div id="stats"></div>
     <script src="../three/three.js"></script>
+    <script src="../three/KeyboardState.js"></script>
     <script src="../three/OBJLoader.js"></script>
     <script src="../three/OrbitControls.js"></script>
+    <script src="../three/ShaderMaterial.js"></script>
+		<script src="../three/WebGLShader.js"></script>
+		<script src="../three/MTLLoader.js"></script>
 
+	<script type="x-shader/-xvertex" id="vertexShader">
+		void main()
+		{
+			vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+			gl_Position = projectionMatrix * modelViewPosition;
+
+		}
+		</script>
+		<script type = "x-shader/x-fragment" id = "fragmentShader">
+			void main()
+			{
+				gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+			}
+		</script>
 		<script>
-
-			var container, stats;
-			var camera, scene, renderer;
+			var container;
+			var camera1, camera2, scene, renderer;
+			var camera2ativa = false;
 			var mouseX = 0, mouseY = 0;
+			var obj_carregado1, obj_carregado2;
 
 			init();
 			animate();
@@ -44,59 +64,101 @@
 
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.z = 50;
 
-				// cria a scene (o mundo)
+				// camera 1:
+				camera1 = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+				//camera1.position.x = 100;
+				//camera1.position.y = 0;
+				camera1.applyMatrix(new THREE.Matrix4().makeTranslation(100,0,0));
+				
+				// camera 2:
+				camera2 = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+				//camera2.position.y = 300;
+				camera2.applyMatrix(new THREE.Matrix4().makeTranslation(0,300,0));
+
+				// cria a cena
 				scene = new THREE.Scene();
+				scene.add(camera1);
+				scene.add(camera2);
 
         // cria uma luz de ambiente e insere na scene
 				var ambient = new THREE.AmbientLight( 0x444444 );
 				scene.add( ambient );
 
-        // Setando iluminação que gira
-        var light = new THREE.PointLight(0xffffcc, 1.0);
-        light.position.set(0, 7, 0);
-        scene.add(light);
+				// Setando iluminação que gira
+				var light = new THREE.PointLight(0xffffcc, 1.0);
+				light.position.set(0, 7, 0);
+				scene.add(light);
 
-        // cria uma luz direcional e insere na scene
+				var matrixScene = new THREE.Matrix4().makeTranslation(0, 0, 0);
+  	 		scene.applyMatrix(matrixScene);
+    
+
+				var material = new THREE.ShaderMaterial({
+					vertexShader: document.getElementById('vertexShader').textContent,
+					fragmentShader: document.getElementById('fragmentShader').textContent
+				});
+
+       	// cria uma luz direcional e insere na scene
 				var directionalLight = new THREE.DirectionalLight( 0xffeedd );
 				directionalLight.position.set( 0, 0, 1 ).normalize();
 				scene.add( directionalLight );
 
-        // loader do objeto, pega o arquivo .obj e transforma ele em objeto,
-        // muda alguns atributos e insere na scene
-        var loader = new THREE.OBJLoader();
-        loader.load(
-          'portalturret.obj',
-          function(object) {
-            object.position.x = 10;
-            object.position.y = 0;
-            object.position.z = 0;
-            object.rotation.y = 80;
-            object.rotation.x = 0;
-            object.scale.set(0.12,0.12,0.12);
-            obj_carregado1 = object;
-            scene.add(obj_carregado1);
-          });
+				// loader do objeto, pega o arquivo .obj e transforma ele em objeto,
+				// muda alguns atributos e insere na scene
 
-          // loader do objeto, pega o arquivo .obj e transforma ele em objeto,
-          // muda alguns atributos e insere na scene
-          var loader = new THREE.OBJLoader();
-          loader.load(
-            'Portal Gun.obj',
-            function(object) {
-              object.position.x = -10;
-              object.position.y = 0;
-              object.position.z = 0;
-              object.rotation.x = 27;
-              object.rotation.y = 31;
-              object.rotation.z = 35;
-              object.scale.set(5,5,5);
-              obj_carregado2 = object;
-              scene.add(obj_carregado2);
-            });
-        // o renderer é o que coloca os objetos de fato na scene, renderiza o plano 3d em 2d
+					var loader = new THREE.OBJLoader();
+					loader.load(
+						'portalturret.obj',
+						function(object) {
+							var portalMatrix = new THREE.Matrix4().makeTranslation(0,-10,30);
+							portalMatrix.multiply(new THREE.Matrix4().makeScale(0.3,0.3,0.4));
+							portalMatrix.multiply(new THREE.Matrix4().makeRotationY(Math.PI/3 ));
+							object.applyMatrix(portalMatrix);
+							//object.position.x = 0;
+							//object.position.y = -10;
+							//object.position.z = 30;
+							//object.rotation.z =   Math.PI;
+							//object.rotation.x = 0;
+							//object.scale.set(0.3,0.3,0.3);
+							obj_carregado1 = object;
+							scene.add(object);
+						
+						}
+					);
+
+
+
+				  // loader do objeto, pega o arquivo .obj e transforma ele em objeto,
+				  // muda alguns atributos e insere na scene
+					var mtlLoader = new THREE.MTLLoader();
+					mtlLoader.load(
+						'IronMan.mtl',
+						function(materials){
+							materials.preload();
+						  var objLoader = new THREE.OBJLoader();
+							objLoader.setMaterials(materials);
+						  objLoader.load(
+							  'IronMan.obj',
+							  function(object) {
+									 // object.position.x = 0;
+									 // object.position.y = -10;
+									//object.position.z = 0;
+								 	// object.rotation.x = 0;
+								 	// object.rotation.y = 0;
+								 	// object.rotation.z = 0;
+								 	// object.scale.set(0.1,0.1,0.1);
+								 	var ironmanMatrix = new THREE.Matrix4().makeTranslation(0,-10,0);
+									ironmanMatrix.multiply(new THREE.Matrix4().makeScale(0.1,0.1,0.1));
+									//portalMatrix.multiply(new THREE.Matrix4().makeRotationY(Math.PI/3 ));
+									object.applyMatrix(ironmanMatrix);
+								  obj_carregado2 = object;
+								  scene.add(obj_carregado2);
+						    }
+							);
+						}
+					);
+				// o renderer é o que coloca os objetos de fato na scene, renderiza o plano 3d em 2d
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -104,11 +166,32 @@
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
-        // Setando rotação da câmera
-        var controls = new THREE.OrbitControls( camera );
-        controls.autoRotate = false;
-        controls.autoRotateSpeed = 4;
-        controls.update();
+				var controls2 = new THREE.OrbitControls( camera2, renderer.domElement);
+				controls2.autoRotate = true;
+				controls2.autoRotateSpeed = 10;
+				// Setando rotação da câmera
+				var controls = new THREE.OrbitControls( camera1 );
+				controls.autoRotate = false;
+				controls.autoRotateSpeed = 4;
+				controls.update();
+
+				addEventListener('keydown', Keyboard, false);
+
+			}
+			function Keyboard (){
+				var speed = 1;
+
+				if (event.keyCode == 32) //backspace
+					camera2ativa = !camera2ativa;
+
+   			if (event.keyCode == 65) //leftarrow
+   					obj_carregado1.position.x += speed;
+   			if (event.keyCode == 87) //up
+   					obj_carregado1.position.z += speed;
+   			if (event.keyCode == 68) //right
+   					obj_carregado1.position.x -= speed;
+   			if (event.keyCode == 83) //down
+   					obj_carregado1.position.z -= speed;
 
 			}
 			function onWindowResize() {
@@ -121,8 +204,15 @@
 				render();
 			}
 			function render() {
-				camera.lookAt( scene.position );
-				renderer.render( scene, camera );
+				if(camera2ativa){
+					camera2.lookAt( scene.position );
+					renderer.render( scene, camera2 );
+				} else {
+
+					renderer.clear();
+					camera1.lookAt( scene.position );
+					renderer.render( scene, camera1 );
+				}
 			}
 		</script>
 
